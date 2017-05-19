@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 import discord, time, random, re
-import tokens, embedModels
+import calculonDB, embedModels, tokens
 
 from discord.ext.commands import Bot
 global owner
@@ -18,55 +18,54 @@ def logChannel(server):
 
 
 def commandFlip(message):
-    callMatrix={
-    'h':['heads', "<:heads:311701066305503232>", 3],
-    't':['tails', "<:tails:311701147457159189>", 3],
-    'e':['edge', "<:edge:311701917614997505>", 10000]
+    flipVar={
+    'c':1,
+    'h':["<:heads:311701066305503232>", 'heads', 3],
+    't':["<:tails:311701147457159189>", 'tails', 3],
+    'e':["<:edge:311701917614997505>", 'edge', 10000]
      }
     output=list()
-    call=str(message.content).replace("$flip", "")
-    call=call.lstrip()
-    print(call)
-    if len(call)>>0:
-      call=call[0]
+    parser='\$flip\s(he?a?d?s?|ta?i?l?s?|ed?g?e?)$'
+    call=re.search(parser, message.content)
+    if call is not None:
+      call=call.group(1)[0]
+      payBot=calculonDB.subScore(message.server.id, message.author.id, flipVar['c'])
+    else:
+      call=False
     flip=random.randrange(1,1001)
     if flip==1001:
-      flip='s'
+      flip='e'
     elif flip % 2==0: 
       flip='h'
     else:
       flip='t'
-    print(flip) 
-    print(call)
-    payBot=calculonDB.subScore(message.server.id, message.author.id, 1)
     if call in ['h', 'e', 't'] and payBot:
-      userCallString="%s flips a coin and calls %s..." % (message.author.mention, callMatrix[call][0])
+      userCallString="%s flips a coin and calls %s..." % (message.author.mention, flipVar[call][0])
     elif call in ['h', 'e', 't'] and payBot==False:
       output.append(calculon.send_message(message.channel, '*Calling a coin toss costs a point, Bro!*'))
-      return [False,output]
-    else: 
-      call=0
-      userCallString="%s flips a coin." % message.author.mention
-    flipString="The coin lands.. %s.... %s!" % (callMatrix[flip][1], callMatrix[flip][0])
-    if call==0: 
+      return [False,output]    
+    userCallString="%s flips a coin." % message.author.mention
+    flipString="The coin lands.. %s.... %s!" % (flipVar[flip][0], flipVar[flip][1])
+    if call is False: 
       winLoseString="Calculon steals your quarter!"	
-    elif call==flip:
-      payOut=calculonDB.addScore(message.server.id, message.author.id, callMatrix[call][2])
+    elif call is flip:
+      payOut=calculonDB.addScore(message.server.id, message.author.id, flipVar[call][2])
       winLoseString="%s wins!" % message.author.mention
-    elif call != flip:
+    elif call is not flip:
       winLoseString="%s loses!" % message.author.mention
     content="%s\n%s\n%s" % (userCallString, flipString, winLoseString)
     output.append(calculon.send_message(message.channel, content))
     return [True, output]
 
 def commandEmote(message):
-    type='emo'
     output=list()
-    emote=str(message.content)
     author=message.author
-    emote=emote.replace('$emote', '')
-    if emote.lstrip()=='': 
-      return [False, output]
+    parser='\$emote(\s\w+.+)$'
+    emote=re.search(parser,message.content)
+    if emote is not None: 
+        emote=emote.group(1)
+    else:
+        return [False, output]
     output.append(calculon.send_message(message.channel, '*%s %s*' % (author.mention, emote)))
     output.append(calculon.delete_message(message))
     addScore=calculonDB.addScore(message.server.id, message.author.id, 1, True)
@@ -74,62 +73,68 @@ def commandEmote(message):
     return [True, output]
 
 def commandMark(message):
-    type='mrk'
     output=list()
     content=str(message.content).replace('$mark', '')
     content=content.lstrip()
-    if len(message.mentions)==1:
-      payBot=calculonDB.subScore(message.server.id, message.author.id, 10)
-      if payBot:
-        butt=calculonDB.setMark(message.server.id, message.mentions[0].mention)
-        output.append(calculon.send_message(message.channel, '*%s suddenly feels nervous.*' % butt[1]))
-      else:
-        output.append(calculon.send_message(message.channel, "*%s tries to mess with someone, but can't afford it!*" % message.author.mention))
-      output.append(calculon.delete_message(message))
-    if len(message.mentions)==0:
-      if content.startswith("c"):
-        butt=calculonDB.checkMark(message.server.id) 
-        output.append(calculon.send_message(message.channel, "*%s is currently marked*" % butt[1]))
-        output.append(calculon.delete_message(message))
-        return [True, output]
-      result=''
-      payBot=calculonDB.subScore(message.server.id, message.author.id, 20)
-      if payBot:
-        butt=calculonDB.clearMark(message.server.id)
-        output.append(calculon.send_message(message.channel, "*Calculon doesn't do impressions.*"))
-        result=True
-      else:
-        output.append(calculon.send_message(message.channel, "*%s tries to clear someones name, but can't afford it!*" % message.author.mention))
-        result=False
-      output.append(calculon.delete_message(message))
+    butt=calculonDB.checkMark(message.server.id) 
+    result=''
     if len(message.mentions)>=2:
       output.append(calculon.send_message(message.channel, '*Calculon looks confused.*'))
       output.append(calculon.delete_message(message))  
       result=False
+    elif len(message.mentions)==1:
+      payBot=calculonDB.subScore(message.server.id, message.author.id, 10)
+      if payBot:
+        butt=calculonDB.setMark(message.server.id, message.mentions[0].mention)
+        output.append(calculon.send_message(message.channel, '*%s suddenly feels nervous.*' % butt[1]))
+        result=True
+      else:
+        output.append(calculon.send_message(message.channel, "*%s tries to mess with someone, but can't afford it!*" % message.author.mention))
+        result=False
+      output.append(calculon.delete_message(message))
+    else:    
+        if content.startswith("c"):
+            output.append(calculon.send_message(message.channel, "*%s is currently marked*" % butt[1]))
+            output.append(calculon.delete_message(message))
+            result=True
+        elif butt[0]:
+            paybot=calculonDB.subScore(message.server.id, message.author.id, 20)
+            if paybot:
+                butt=calculonDB.clearMark(message.server.id)
+                output.append(calculon.send_message(message.channel, "*Calculon doesn't do impressions.*"))
+                result=True
+            else:
+                output.append(calculon.send_message(message.channel, "*%s tries to clear someones name, but can't afford it!*" % message.author.mention))
+                result=False
+        elif butt[0] is False:
+            output.append(calculon.send_message(message.channel, "Nobody marked to clear!"))
+            result=False
+            output.append(calculon.delete_message(message))
     return [result, output]
 
 def commandFrame(message):
    butt=calculonDB.checkMark(message.server.id)
    output=list()
-   type='frm'
-   spoof=butt[1]
-   emote=str(message.content).replace("$frame", "")
-   if butt[0]:
-    payBot=calculonDB.subScore(message.server.id, message.author.id, 1)
-    if payBot:
-      output.append(calculon.send_message(message.channel,'*%s %s*' % (spoof, emote)))
-    else:
-      return [False, output]
-    output.append(calculon.delete_message(message))
+   butt[1]
+   parser='\$frame(\s[[:word:]]+.+)$'
+   emote=re.search(parser,message.content)
+   if emote is not None:
+       emote=emote.group(1)
+       if butt[0]:
+           payBot=calculonDB.subScore(message.server.id, message.author.id, 1)
+           if payBot:
+               output.append(calculon.send_message(message.channel,'*%s %s*' % (butt[1], emote)))
+               output.append(calculon.delete_message(message))
+               return [True, output]
+           else:
+               return [False, output]
    else: 
-    return [False, output]
-   return [True, output]
+       return [False, output]
 
 def commandCheck(message):
     member=''
     output=list()
     if len(message.mentions)==0:
-      print('inside len==0 loop')
       memberScore=calculonDB.checkScore(message.server.id, message.author.id)
       member=message.author
     elif len(message.mentions)==1:
@@ -144,33 +149,39 @@ def commandCheck(message):
 
 def commandGive(message):
   output=list()
-  parser='\$give\s(\d+|a\sblowjob|some\sanal)\s<@.+'
-  if len(message.mentions) !=1:
-    output.append(calculon.send_message(message.channel, "Too litte or too many people mentioned.")) 
-    return [False, output] 
-  donor=message.author
-  recipient=message.mentions[0]
-  serverID=message.server.id
-  amount=re.search(parser, message.content)
-  if amount is None:
-    output.append(calculon.send_message(message.channel, "That's not something you can give.")) 
-    return [False, output] 
-  else:
-    amount=amount.group(1)
-  if amount=='a blowjob' or amount=='some anal':
-      newMsgContent='%s *gives* %s *%s*.\n **Tasty!**' % (donor.mention, recipient.mention, amount)
-      output.append(calculon.send_message(message.channel,newMsgContent))
-      return [True, output]
-  payment=calculonDB.subScore(serverID, donor.id, int(amount))
   result=''
-  if payment: 
-    donation=calculonDB.addScore(serverID, recipient.id, amount)
-    newMsgContent='%s *gave* %s *%i points!*' % (donor.mention, recipient.mention, int(amount))
-    result=True
+  jokes=('a blowjob', 'some anal')
+  parser='\$give\s(\d+|a?\s?blowjob|s?o?m?e?\s?anal)\s<@.+'
+  if len(message.mentions) !=1:
+    output.append(calculon.send_message(message.channel, "No recipient.")) 
+    result=False 
   else:
-    newMsgContent="%s*, you don't have %i points to be giving away!*" % (donor.mention, amount)
-    result=False
-  output.append(calculon.send_message(message.channel, newMsgContent))
+      donor=message.author
+      recipient=message.mentions[0]
+      serverID=message.server.id
+      amount=re.search(parser, message.content)
+      if amount is None:
+        output.append(calculon.send_message(message.channel, "That's not something you can give.")) 
+        result=False 
+      else:
+        amount=amount.group(1)
+        fake=False
+        for joke in jokes: 
+          if amount in joke:
+              amount=joke
+              fake=True 
+        if fake: 
+          newMsgContent='%s *gives* %s *%s*.\n **Tasty!**' % (donor.mention, recipient.mention, amount)
+          output.append(calculon.send_message(message.channel,newMsgContent))
+          result=True
+        elif calculonDB.subScore(serverID, donor.id, int(amount)): 
+          donation=calculonDB.addScore(serverID, recipient.id, amount)
+          newMsgContent='%s *gave* %s *%i points!*' % (donor.mention, recipient.mention, int(amount))
+          result=True
+        else:
+          newMsgContent="%s*, you don't have %i points to be giving away!*" % (donor.mention, amount)
+          result=False
+          output.append(calculon.send_message(message.channel, newMsgContent))
   return [result, output]
 
 def commandVote(message): 
