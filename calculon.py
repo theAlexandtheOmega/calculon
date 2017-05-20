@@ -116,7 +116,7 @@ def commandFrame(message):
    butt=calculonDB.checkMark(message.server.id)
    output=list()
    butt[1]
-   parser='\$frame(\s[[:word:]]+.+)$'
+   parser='\$frame(\s\w+.+)$'
    emote=re.search(parser,message.content)
    if emote is not None:
        emote=emote.group(1)
@@ -161,7 +161,7 @@ def commandGive(message):
       serverID=message.server.id
       amount=re.search(parser, message.content)
       if amount is None:
-        output.append(calculon.send_message(message.channel, "That's not something you can give.")) 
+        newMsgContent="That's not something you can give." 
         result=False 
       else:
         amount=amount.group(1)
@@ -181,7 +181,7 @@ def commandGive(message):
         else:
           newMsgContent="%s*, you don't have %i points to be giving away!*" % (donor.mention, amount)
           result=False
-          output.append(calculon.send_message(message.channel, newMsgContent))
+  output.append(calculon.send_message(message.channel, newMsgContent))
   return [result, output]
 
 def commandVote(message): 
@@ -234,7 +234,7 @@ def commandMute(message, logChannel):
         msgContent='*%s is not muted.*' % member.mention
       output.append(calculon.send_message(message.channel, msgContent))
       result=True
-  return [Result, output]
+  return [result, output]
 
 def commandBlowup(message): 
   output=list()
