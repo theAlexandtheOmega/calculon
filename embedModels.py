@@ -69,3 +69,14 @@ def createLogEmbed(message, result):
   lCard.add_field(name='message content', value=message.content)
   return lCard
 
+def createPicEmbed(message, title):
+  xCard=discord.Embed()
+  xCard.set_author(name=message.author.name, icon_url=message.author.avatar_url)
+  xCard.title=title
+  xCard.url='http://google.com'  
+  xCard.type='rich'
+  xCard.color=discord.Color.pink()
+  xCard.add_field(name='Command Result', value=result)
+  xCard.add_field(name='Channel', value=message.channel.name)
+  xCard.add_field(name='message content', value=message.content)
+  return lCard
