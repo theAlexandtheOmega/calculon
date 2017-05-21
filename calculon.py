@@ -237,7 +237,7 @@ def commandMute(message, logChannel):
   return [result, output]
 
 def commandBlowup(message): 
-    if message.content in ('ayy' or 'aayy'):
+    if message.content in ('ayy' , 'aayy'):
         images=('data/images/rofl1.png', 'data/images/rofl2.png', 'data/images/rofl3.png',
              'data/images/rofl4.png')
     elif message.content in ('rip', 'RIP', 'rip.', 'RIP.'):
