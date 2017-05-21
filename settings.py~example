@@ -1,0 +1,6 @@
+#!/usr/bin/bash
+def Settings():
+    settingsArray={'token':"<your token here>",
+                   'database':'mysql://<user>:<password>@localhost/calculon',
+                   'owner':'<your discord id here>'}
+    return settingsArray
