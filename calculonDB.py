@@ -1,13 +1,13 @@
 #!/usr/bin/python3
 
 from sqlobject import *
-import discord, time
+import discord, time, sqlsettings
 
 def nextScore():
   return int(time.time()+60)
 
 def createCxn():
- cxnString='mysql://dumplingtruck:p33pshow@localhost/calculon'
+ cxnString=sqlsettings.sqlSettings()
  cxn=connectionForURI(cxnString)
  sqlhub.processConnection=cxn
  return True
@@ -39,7 +39,7 @@ def checkModules(sID):
               vote = False,
               mute = False, 
               blowup = False,
-	      redose = False
+    	      redose = False
               )
       mods=botModules.select(botModules.q.serverID==sID)
     mods=mods[0]
@@ -129,10 +129,10 @@ def checkUser(author):
   print('starting')
   connected=createCxn()
   while connected:
-    print('inside connected loop')
+#    print('inside connected loop')
     check=discordUsers.select(discordUsers.q.discordID==author.id)
     if check.count()==0:
-      print('inner loop')
+#      print('inner loop')
       dUser=discordUsers(
         discordID=author.id,
 #        name=author.name,
