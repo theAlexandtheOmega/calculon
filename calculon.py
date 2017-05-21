@@ -1,20 +1,25 @@
 #!/usr/bin/python3
 
 import discord, time, random, re
-import calculonDB, embedModels, tokens
+import calculonDB, embedModels, settings
 from django.core.validators import URLValidator as vURL
 from discord.ext.commands import Bot
-global owner
-owner='223564803224895488'
+global owner, token, database
+#owner='223564803224895488'
 #tokenFile=open('token.txt', 'r')
 #token=tokenFile.read()
 #tokenFile.close()
-token=tokens.calculonToken()
+settings=settings.Settings()
+owner=settings['owner']
+token=settings['token']
+database=settings['database']
+setDB=calculonDB.setDB(database)
 
-def logChannel(server):
-  channelID='314297394399281154'
-  logChan=server.get_channel(channelID)
-  return logChan
+
+#def logChannel(server):
+#  channelID='314297394399281154'
+#  logChan=server.get_channel(channelID)
+#  return logChan
 
 
 def commandFlip(message):
@@ -60,7 +65,7 @@ def commandFlip(message):
 def commandEmote(message):
     output=list()
     author=message.author
-    parser='\$emote(\s\w+.+)$'
+    parser='\$emote(\s+\w+.+)$'
     emote=re.search(parser,message.content)
     if emote is not None: 
         emote=emote.group(1)
@@ -258,6 +263,11 @@ calculon=Bot(command_prefix='!')
 @calculon.event
 async def on_ready():
     print("Client logged in")
+    for server in calculon.servers:
+      chck=calculonDB.checkServer(server.id)
+      scre=calculonDB.checkScore(server.id, owner)
+      if calculonDB.checkAdmin(server.id, owner) is False: 
+          admn=calculonDB.setAdmin(server.id, owner, True)
     print(calculon.user.id)
 
 @calculon.event
