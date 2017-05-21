@@ -2,7 +2,7 @@
 
 import discord, time, random, re
 import calculonDB, embedModels, tokens
-
+from django.core.validators import URLValidator as vURL
 from discord.ext.commands import Bot
 global owner
 owner='223564803224895488'
@@ -237,9 +237,17 @@ def commandMute(message, logChannel):
   return [result, output]
 
 def commandBlowup(message): 
-  output=list()
-  result=''
-  return [result, output]
+    if message.content in ('ayy' or 'aayy'):
+        images=('data/images/rofl1.png', 'data/images/rofl2.png', 'data/images/rofl3.png',
+             'data/images/rofl4.png')
+    elif message.content in ('rip', 'RIP', 'rip.', 'RIP.'):
+        images=('data/images/rip1.png', 'data/images/rip2.png', 'data/images/rip3.png',
+                'data/images/rip4.png')
+    output=list()
+    output.append(calculon.send_file(message.channel, random.choice(images)))
+    result=True
+    return [result, output]
+
 
 def commandRedose(message): 
   output=list()
@@ -254,6 +262,10 @@ async def on_ready():
 
 @calculon.event
 async def on_message(message):
+  print(message.channel.id)
+  if message.channel.is_private: 
+      print('PM command attempted')
+      return False
   serverLogChannel=calculonDB.getLogging(message.server)
   await calculon.process_commands(message)
   if message.author.bot==False:
@@ -266,7 +278,8 @@ async def on_message(message):
        logfile=embedModels.createDeletedEmbed(message, calculon.user)
        server=message.server
        await calculon.delete_message(message)
-       await calculon.send_message(serverLogChannel, '', embed=logfile)
+       if serverLogChannel:
+         await calculon.send_message(serverLogChannel, '', embed=logfile)
        return
    print('%s, %s, %s' % (str(usr), str(message.content), str(message.channel)))
    command_message=message
@@ -286,7 +299,9 @@ async def on_message(message):
      newScript=commandVote(message)
    elif message.content.startswith('$mute ') and mods.mute:
      newScript=commandMute(message, serverLogChannel)
-   elif message.content.startswith('$blowup') and mods.blowup:
+   elif (message.content.startswith('ayy') or message.content.startswith('aayy')) and mods.blowup:
+     newScript=commandBlowup(message)
+   elif message.content in ('rip', 'RIP', 'rip.', 'RIP.') and mods.blowup:
      newScript=commandBlowup(message)
    elif message.content.startswith('$redose' ) and mods.redose:
      newScript=commandBlowup(message)
@@ -295,7 +310,8 @@ async def on_message(message):
    for action in newScript[1]:
      await action
    card=embedModels.createLogEmbed(message,newScript[0]) 
-   await calculon.send_message(serverLogChannel, '', embed=card)
+   if serverLogChannel:
+     await calculon.send_message(serverLogChannel, '', embed=card)
   return
 
 @calculon.command(pass_context=True)
@@ -313,7 +329,6 @@ async def setAdmin(msg, content:str):
       'unset' : False
       }
     parser='\!setAdmin\s(set|unset)\s\<@'
-    print('post-parser')
     subCmd=re.search(parser, msg.content)
     if subCmd is not None: 
       cmd=subCmd.group(1)
@@ -327,7 +342,7 @@ async def setAdmin(msg, content:str):
             print('set as admin')
             await calculon.say("Ok.")
           else:  
-            await calculon.say("Ok.")
+            await calculon.say("No good.")
         if serverLogChannel:
             card=embedModels.createAdminEmbed(msg, cmd='setAdmin', result=True)
             await calculon.send_message(serverLogChannel, '', embed=card)
@@ -348,7 +363,6 @@ async def ap(msg, amount=0):
     msg=msg.message
     usr=msg.author.id
     srv=msg.server.id
-    serverLogChannel=calculonDB.getLogging(msg.server)
     if calculonDB.checkAdmin(srv, usr):
         if isinstance(amount, int):
           amnt=amount
@@ -369,7 +383,9 @@ async def ap(msg, amount=0):
     return False
 
 @calculon.command(pass_context=True)
-async def test(msg):
+async def test(msg, *args, **kwargs):
+    for arg in args:
+        print(arg)
     msg=msg.message
     serverLogChannel=calculonDB.getLogging(msg.server)
     usr=msg.author.id
@@ -380,7 +396,22 @@ async def test(msg):
     if serverLogChannel:
         card=embedModels.createAlertEmbed(msg, cmd='setAdmin')
         await calculon.send_message(serverLogChannel, '', embed=card)
-     
+
+@calculon.command(pass_context=True)
+async def join(msg,arg):
+    msg=msg.message
+    if calculonDB.checkAdmin(msg.server.id, msg.author.id): 
+      if arg:
+          await calculon.say('*url validated*')
+          server = await calculon.accept_invite(arg)    
+          if server: 
+              await calculon.say('**joined server**')
+          else: 
+              await calculon.say('**server join failed**')  
+      else:
+          await calculon.say('*URL or admin validation failed*')        
+    else: 
+      return False      
  
 print(token)   
 calculon.run(token)
