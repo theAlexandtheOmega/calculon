@@ -1,13 +1,38 @@
 #!/usr/bin/python3
 
 from sqlobject import *
-import discord, time, sqlsettings
+import discord, time, os, sys
+
+global sqlSettings
+
+if os.path.isfile('data/hasrun.log') is False:
+    connected=createCxn()
+    while connected():
+        try:
+          discordServers.createTable()
+          botModules.createTable()
+          discordUsers.createTable()
+          discordScores.createTable()
+          connected=False
+        except:
+          print('tables not created or already present!')
+          connected=False
+          sys.exit(0)
+    file=open('data/hasrun.log', 'w')
+    file.write('db library has run, tables created.')
+    file.close()
+
+
+def setDB(database):
+    global sqlSettings
+    sqlSettings=database
+    return True
 
 def nextScore():
-  return int(time.time()+60)
+    return int(time.time()+60)
 
 def createCxn():
- cxnString=sqlsettings.sqlSettings()
+ cxnString=sqlSettings
  cxn=connectionForURI(cxnString)
  sqlhub.processConnection=cxn
  return True
@@ -58,7 +83,7 @@ def checkServer(sID):
   connected=createCxn()
   while connected:
     check=discordServers.select(discordServers.q.serverID==sID)
-    if check.count()==0:
+    if check.count() is 0:
       dServer=discordServers(
         serverID=sID, 
         joinDate=int(time.time()),
@@ -67,9 +92,9 @@ def checkServer(sID):
         channelID='',
         logging=False
         )
-      check=discordServers.select(discordServers.q.serverID==sID)
-      connected=False
-    return check[0]
+    check=discordServers.select(discordServers.q.serverID==sID)
+    connected=False
+  return check[0]
 
 def setLogging(server, cID, OnOFF=False):
     srvr=checkServer(server.id)   
@@ -119,9 +144,7 @@ def clearMark(sID):
   return [server.mark, server.marked]
 
 class discordUsers(SQLObject):
-#  name = StringCol()
   discordID = StringCol()
-#  display_name = StringCol()
   discriminator = StringCol()
   bot = BoolCol()
 
@@ -129,14 +152,10 @@ def checkUser(author):
   print('starting')
   connected=createCxn()
   while connected:
-#    print('inside connected loop')
     check=discordUsers.select(discordUsers.q.discordID==author.id)
     if check.count()==0:
-#      print('inner loop')
       dUser=discordUsers(
         discordID=author.id,
-#        name=author.name,
-#        display_name=bytes(author.display_name, 'utf-8'),
         discriminator=author.discriminator,
         bot=author.bot)
       check=discordUsers.select(discordUsers.q.discordID==author.id)
@@ -162,7 +181,7 @@ def checkScore(sID, uID):
         serverID=sID,
         timeLock=0, 
         muted=False,
-	botAdmin=False
+	    botAdmin=False
        	)
       dScore=discordScores.selectBy(serverID=sID, discordID=uID)
     dScore=dScore[0]
