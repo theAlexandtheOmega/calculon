@@ -44,12 +44,12 @@ def commandFlip(message):
       flip='h'
     else:
       flip='t'
-    if call in ['h', 'e', 't'] and payBot:
-      userCallString="%s flips a coin and calls %s..." % (message.author.mention, flipVar[call][0])
-    elif call in ['h', 'e', 't'] and payBot==False:
+    if call in ('h', 'e', 't') and payBot:
+      userCallString="%s flips a coin and calls %s..." % (message.author.mention, flipVar[call][1])
+    elif call in ('h', 'e', 't') and payBot==False:
       output.append(calculon.send_message(message.channel, '*Calling a coin toss costs a point, Bro!*'))
       return [False,output]    
-    userCallString="%s flips a coin." % message.author.mention
+      userCallString="%s flips a coin." % message.author.mention
     flipString="The coin lands.. %s.... %s!" % (flipVar[flip][0], flipVar[flip][1])
     if call is False: 
       winLoseString="Calculon steals your quarter!"	
@@ -65,7 +65,7 @@ def commandFlip(message):
 def commandEmote(message):
     output=list()
     author=message.author
-    parser='\$emote(\s+\w+.+)$'
+    parser='\$emote(\s+\*+.+|\s+\<@.+|\s+\w.+)$'
     emote=re.search(parser,message.content)
     if emote is not None: 
         emote=emote.group(1)
@@ -121,7 +121,7 @@ def commandFrame(message):
    butt=calculonDB.checkMark(message.server.id)
    output=list()
    butt[1]
-   parser='\$frame(\s\w+.+)$'
+   parser='\$frame(\s+\*+.+|\s+\<@.+|\s+\w.+)$'
    emote=re.search(parser,message.content)
    if emote is not None:
        emote=emote.group(1)
