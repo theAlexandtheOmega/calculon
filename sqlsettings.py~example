@@ -1,5 +1,0 @@
-#!/usr/bin/python3
-
-def sqlSettings():
-    sqlDB='mysql://<user>:<password>@<host(localhost prolly)>/<dbname>'
-    return sqlDB
