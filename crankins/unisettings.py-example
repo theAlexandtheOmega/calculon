@@ -1,0 +1,8 @@
+#!/usr/bin/python3
+def Settings():
+    settingsArray={'token':"<your token>",
+                   'srvr1':'<production server numeric id>',
+		   'srvr2':'<staging server numeric id>',
+                   'owner':'<your numeric discord id>', 
+		    'stage':0}
+    return settingsArray
