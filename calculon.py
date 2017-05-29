@@ -265,15 +265,17 @@ def commandMute(message, logChannel):
   return [result, output]
 
 def commandRipAyy(message): 
+    output=list()
     if message.content in ('ayy' , 'aayy'):
         images=('data/images/rofl1.png', 'data/images/rofl2.png', 'data/images/rofl3.png',
              'data/images/rofl4.png')
+        for emoji in ['🇱', '🇲', '🇦', '🇴']:
+            output.append(calculon.add_reaction(message, emoji))
     elif message.content in ('rip', 'RIP', 'rip.', 'RIP.'):
         images=('data/images/rip1.png', 'data/images/rip2.png', 'data/images/rip3.png',
                 'data/images/rip4.png')
-    output=list()
-    for emoji in ['🇱', '🇲', '🇦', '🇴']:
-        output.append(calculon.add_reaction(message, emoji))
+        for emoji in ['🇷', '🇮', '🇵']:
+            output.append(calculon.add_reaction(message, emoji))
     output.append(calculon.send_file(message.channel, random.choice(images)))
     result=True
     return [result, output]
