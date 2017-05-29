@@ -46,8 +46,8 @@ class botModules(SQLObject):
   give = BoolCol()
   vote = BoolCol()
   mute = BoolCol()
-  blowup = BoolCol()
-  redose = BoolCol()  
+  ripayy = BoolCol()
+  prune = BoolCol()  
 
 def checkModules(sID):
   connected=createCxn()
@@ -62,9 +62,9 @@ def checkModules(sID):
               flip = True,
               give = True,
               vote = False,
-              mute = False, 
-              blowup = False,
-    	      redose = False
+              mute = True, 
+              ripayy = True,
+    	      prune = True
               )
       mods=botModules.select(botModules.q.serverID==sID)
     mods=mods[0]
@@ -78,7 +78,6 @@ class discordServers(SQLObject):
   marked = StringCol()
   channelID = StringCol()
   logging = BoolCol()
-  
 def checkServer(sID):
   connected=createCxn()
   while connected:
@@ -96,14 +95,17 @@ def checkServer(sID):
     connected=False
   return check[0]
 
-def setLogging(server, cID, OnOFF=False):
-    srvr=checkServer(server.id)   
-    channel=server.get_channel(cID)
+def setLogging(server, channel=False, OnOff=False):
+    srvr=checkServer(server.id)
+    connected=createCxn()   
     while connected:
         if OnOff is False:
             srvr.logging=False
+            connected=False
+        elif channel:
+            srvr.logging=True
+            srvr.channelID=channel.id
             connected=False     
-        srvr.logging=OnOff
     return srvr.logging
     
 def getLogging(server):
@@ -113,6 +115,14 @@ def getLogging(server):
     else:
         return False
     return channel
+
+def getLogPerms(server):
+    srvr=checkServer(server.id)
+    if srvr.logging: 
+        channel=server.get_channel(srvr.channelID)
+    else:
+        return False
+    return channel.overwrites
 
 def getServers():
   connected=createCxn()
