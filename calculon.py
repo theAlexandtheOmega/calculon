@@ -15,12 +15,35 @@ token=settings['token']
 database=settings['database']
 setDB=calculonDB.setDB(database)
 
-
+    
+global deleteTarget, purgeArray
+purgeArray=dict()
 #def logChannel(server):
 #  channelID='314297394399281154'
 #  logChan=server.get_channel(channelID)
 #  return logChan
-
+def is_user(message):
+    global purgeArray
+    serverLogChannel=calculonDB.getLogging(message.server)
+    if serverLogChannel and message.author == deleteTarget:
+        purgeArray[message.server.id].append(logThis(message, serverLogChannel))        
+    return message.author==deleteTarget
+def contains_word(message):
+    global purgeArray
+    serverLogChannel=calculonDB.getLogging(message.server)
+    if serverLogChannel and deleteTarget in message.content:
+        purgeArray[message.server.id].append(logThis(message, serverLogChannel))        
+    return deleteTarget in message.content
+def is_message(message):
+    global purgeArray
+    serverLogChannel=calculonDB.getLogging(message.server)
+    if serverLogChannel:
+        purgeArray[message.server.id].append(logThis(message, serverLogChannel))        
+    return True
+def logThis(message, logChannel):
+    log=embedModels.createDeletedEmbed(message, calculon.user)
+    logIt=calculon.send_message(logChannel, '', embed=log)
+    return logIt
 
 def commandFlip(message):
     flipVar={
@@ -38,7 +61,7 @@ def commandFlip(message):
     else:
       call=False
     flip=random.randrange(1,1001)
-    if flip==1001:
+    if flip==1000:
       flip='e'
     elif flip % 2==0: 
       flip='h'
@@ -241,7 +264,7 @@ def commandMute(message, logChannel):
       result=True
   return [result, output]
 
-def commandBlowup(message): 
+def commandRipAyy(message): 
     if message.content in ('ayy' , 'aayy'):
         images=('data/images/rofl1.png', 'data/images/rofl2.png', 'data/images/rofl3.png',
              'data/images/rofl4.png')
@@ -254,16 +277,55 @@ def commandBlowup(message):
     return [result, output]
 
 
-def commandRedose(message): 
-  output=list()
+
+
+def commandPrune(message): 
+  global deleteTarget
+  deleteTarget=''
   result=''
-  return [result, output]
+  output=list()
+  if calculonDB.checkAdmin(message.server.id, message.author.id) is False:
+      result=False
+      return [False, output]
+  parser='\$prune\s(\d+|<@.+>|bot|\w+)'
+  subCmd=re.search(parser, message.content)
+  if subCmd is None:
+      print('prune->subCmd:False')
+      return [False, output]
+  else:
+      subCmd=subCmd.group(1)
+  if str.isnumeric(subCmd):
+      Limit=int(subCmd)+1
+      output.append(calculon.purge_from(message.channel, limit=Limit, check=is_message))
+      result=True
+  elif len(message.mentions) == 1:
+      print('prune->if:user')
+      deleteTarget=message.mentions[0]
+      output.append(calculon.purge_from(message.channel, limit=100, check=is_user))
+      result=True
+  elif subCmd in ['bot', 'self']:
+      print('prune->if:bot')
+      deleteTarget=calculon.user
+      output.append(calculon.purge_from(message.channel, limit=100, check=is_user))
+      result=True
+  else:
+      deleteTarget=subCmd
+      output.append(calculon.purge_from(message.channel, limit=100, check=contains_word))
+      result=False
+  print('prune->return from if')
+  return [True, output]
+      
+  
+  
+  
+  
 calculon=Bot(command_prefix='!')
 
 @calculon.event
 async def on_ready():
     print("Client logged in")
     for server in calculon.servers:
+      purgeArray[server.id]=list()
       chck=calculonDB.checkServer(server.id)
       scre=calculonDB.checkScore(server.id, owner)
       if calculonDB.checkAdmin(server.id, owner) is False: 
@@ -285,10 +347,10 @@ async def on_message(message):
    mods=calculonDB.checkModules(srvr.serverID)
    if mods.mute:
      if calculonDB.checkMuted(srvr.serverID, usr.discordID): 
-       logfile=embedModels.createDeletedEmbed(message, calculon.user)
        server=message.server
        await calculon.delete_message(message)
        if serverLogChannel:
+         logfile=embedModels.createDeletedEmbed(message, calculon.user)
          await calculon.send_message(serverLogChannel, '', embed=logfile)
        return
    print('%s, %s, %s' % (str(usr), str(message.content), str(message.channel)))
@@ -309,18 +371,18 @@ async def on_message(message):
      newScript=commandVote(message)
    elif message.content.startswith('$mute ') and mods.mute:
      newScript=commandMute(message, serverLogChannel)
-   elif (message.content.startswith('ayy') or message.content.startswith('aayy')) and mods.blowup:
-     newScript=commandBlowup(message)
-   elif message.content in ('rip', 'RIP', 'rip.', 'RIP.') and mods.blowup:
-     newScript=commandBlowup(message)
-   elif message.content.startswith('$redose' ) and mods.redose:
-     newScript=commandBlowup(message)
+   elif message.content in ('rip', 'RIP', 'rip.', 'RIP.', 'ayy', 'aayy') and mods.ripayy:
+     newScript=commandRipAyy(message)
+   elif message.content.startswith('$prune ' ) and mods.prune:
+     newScript=commandPrune(message)
    else:
      return    
    for action in newScript[1]:
      await action
    card=embedModels.createLogEmbed(message,newScript[0]) 
    if serverLogChannel:
+     while len(purgeArray[message.server.id]) > 0:
+         await purgeArray[message.server.id].pop()
      await calculon.send_message(serverLogChannel, '', embed=card)
   return
 
@@ -421,8 +483,26 @@ async def join(msg,arg):
       else:
           await calculon.say('*URL or admin validation failed*')        
     else: 
-      return False      
- 
+        return False      
+@calculon.command(pass_context=True)
+async def log(msg,arg):
+    msg=msg.message
+    serverLogChannel=calculonDB.getLogging(msg.server)
+    if calculonDB.checkAdmin(msg.server.id, msg.author.id): 
+        if arg in ['off', 'Off', 'o', 'O']:
+            logging=calculonDB.setLogging(msg.server,   False, False)
+            await calculon.say('**Logging disabled for %s**' % msg.server.name)
+            return
+        elif len(msg.channel_mentions)==1:
+            channel=msg.channel_mentions[0]
+            logging=calculonDB.setLogging(msg.server, channel, True)
+            await calculon.say('**logging for %s set to channel: %s**' % (msg.server.name, channel.name))
+            return
+    else:
+        if serverLogChannel:
+            card=embedModels.createAlertEmbed(msg, cmd='log')
+            await calculon.send_message(serverLogChannel, '', embed=card)
+        return False
+        
 print(token)   
 calculon.run(token)
-
