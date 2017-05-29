@@ -272,6 +272,8 @@ def commandRipAyy(message):
         images=('data/images/rip1.png', 'data/images/rip2.png', 'data/images/rip3.png',
                 'data/images/rip4.png')
     output=list()
+    for emoji in ['🇱', '🇲', '🇦', '🇴']:
+        output.append(calculon.add_reaction(message, emoji))
     output.append(calculon.send_file(message.channel, random.choice(images)))
     result=True
     return [result, output]
@@ -307,11 +309,13 @@ def commandPrune(message):
       print('prune->if:bot')
       deleteTarget=calculon.user
       output.append(calculon.purge_from(message.channel, limit=100, check=is_user))
+      output.append(calculon.delete_message(message))
       result=True
   else:
       deleteTarget=subCmd
       output.append(calculon.purge_from(message.channel, limit=100, check=contains_word))
-      result=False
+      output.append(calculon.delete_message(message))
+      result=True
   print('prune->return from if')
   return [True, output]
       
