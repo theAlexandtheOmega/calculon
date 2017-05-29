@@ -127,7 +127,7 @@ def getLogPerms(server):
 def getServers():
   connected=createCxn()
   while connected: 
-   table=discordServers.get()
+   table=discordServers.get(3)
    connected=False
   return table
 
