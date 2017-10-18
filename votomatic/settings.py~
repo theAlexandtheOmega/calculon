@@ -1,0 +1,7 @@
+#!/usr/bin/bash
+def Settings():
+    settingsArray={'token':"<bot token>",
+                   'database':'mysql://<username>:<password>@localhost/votomatic',
+                   'owner':'<owner discord id>',
+		   'duration': 86400}
+    return settingsArray
